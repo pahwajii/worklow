@@ -1,7 +1,7 @@
 import { createClient } from "@nhost/nhost-js";
 
-const subdomain = process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN;
-const region = process.env.NEXT_PUBLIC_NHOST_REGION;
+const subdomain = process.env.NEXT_PUBLIC_NHOST_SUBDOMAIN || "xtohbhbdmlegmskonuxm";
+const region = process.env.NEXT_PUBLIC_NHOST_REGION || "ap-south-1";
 
 export const nhost = createClient({
   subdomain,
