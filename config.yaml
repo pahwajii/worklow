@@ -1,0 +1,4 @@
+version: 3
+endpoint: http://localhost:8080
+metadata_directory: nhost/metadata
+migrations_directory: nhost/migrations
