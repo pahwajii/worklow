@@ -1,3 +1,10 @@
-# Minimal project override. Nhost supplies project service defaults.
+# Minimal project configuration for Nhost Cloud deployment.
 [functions.node]
 version = 22
+
+[hasura]
+adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
+
+[[hasura.jwtSecrets]]
+type = "HS256"
+key = "{{ secrets.HASURA_GRAPHQL_JWT_SECRET }}"
