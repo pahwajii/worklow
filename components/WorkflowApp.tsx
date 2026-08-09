@@ -153,6 +153,16 @@ export function WorkflowApp() {
     return org?.memberships.find((m) => m.user_id === userId)?.role ?? null;
   }, [org, session]);
 
+  function clearWorkspaceState() {
+    setOrgId("");
+    setWorkflowId("");
+    setDraft(null);
+    setRunId("");
+    setRun(null);
+    wsRef.current?.dispose();
+    wsRef.current = null;
+  }
+
   useEffect(() => {
     (async () => {
       try { await nhost.refreshSession(); } catch { /* no active session */ }
@@ -164,6 +174,7 @@ export function WorkflowApp() {
   useEffect(() => {
     if (!session) return;
     let cancelled = false;
+    clearWorkspaceState();
     (async () => {
       try {
         await bootstrapUser(session.accessToken);
@@ -179,7 +190,13 @@ export function WorkflowApp() {
   }, [session?.accessToken]);
 
   useEffect(() => {
-    if (!org) return;
+    if (!org) {
+      setWorkflowId("");
+      setDraft(null);
+      setRunId("");
+      setRun(null);
+      return;
+    }
     const selected = org.workflows.find((w) => w.id === workflowId) ?? org.workflows[0];
     if (selected) {
       setWorkflowId(selected.id);
@@ -258,8 +275,14 @@ export function WorkflowApp() {
     try {
       const data = await gql<{ organizations: Org[] }>(DASHBOARD_QUERY);
       setOrgs(data.organizations);
-      const nextOrgId = preferredOrgId || orgId || data.organizations[0]?.id || "";
+      const nextOrgId = [preferredOrgId, orgId].find((id) => id && data.organizations.some((item) => item.id === id)) || data.organizations[0]?.id || "";
       setOrgId(nextOrgId);
+      if (!nextOrgId) {
+        setWorkflowId("");
+        setDraft(null);
+        setRunId("");
+        setRun(null);
+      }
       return data.organizations;
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -412,7 +435,7 @@ export function WorkflowApp() {
             {orgs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
           <span className={`role ${role}`}>{role ?? "no membership"}</span>
-          <button className="ghost" onClick={() => { nhost.clearSession(); setSession(null); setOrgs([]); }}>Sign out</button>
+          <button className="ghost" onClick={() => { nhost.clearSession(); setSession(null); setOrgs([]); clearWorkspaceState(); }}>Sign out</button>
         </div>
       </header>
 
