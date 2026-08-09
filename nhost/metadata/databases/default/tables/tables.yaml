@@ -1,3 +1,5 @@
+- table: {schema: auth, name: users}
+
 - table: {schema: public, name: organizations}
   array_relationships:
     - name: memberships
