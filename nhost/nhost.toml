@@ -1,0 +1,3 @@
+# Minimal project override. Nhost supplies project service defaults.
+[functions.node]
+version = 22

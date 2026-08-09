@@ -1,0 +1,22 @@
+- name: default
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: HASURA_GRAPHQL_DATABASE_URL
+      isolation_level: read-committed
+      use_prepared_statements: true
+  tables: "!include default/tables/tables.yaml"
+  functions:
+    - function:
+        schema: public
+        name: reserve_org_quota
+    - function:
+        schema: public
+        name: finalize_org_quota
+    - function:
+        schema: public
+        name: release_org_quota
+    - function:
+        schema: public
+        name: approve_step_and_enqueue

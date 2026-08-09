@@ -1,0 +1,65 @@
+actions:
+  - name: triggerWorkflowRun
+    definition:
+      kind: synchronous
+      type: mutation
+      handler: "{{WORKFLOW_TRIGGER_ACTION_WEBHOOK}}"
+      forward_client_headers: false
+      headers:
+        - name: nhost-webhook-secret
+          value_from_env: NHOST_WEBHOOK_SECRET
+      arguments:
+        - name: workflow_id
+          type: uuid!
+        - name: input
+          type: jsonb
+      output_type: WorkflowRunActionResult!
+    permissions:
+      - role: user
+  - name: approveStep
+    definition:
+      kind: synchronous
+      type: mutation
+      handler: "{{WORKFLOW_APPROVAL_ACTION_WEBHOOK}}"
+      forward_client_headers: false
+      headers:
+        - name: nhost-webhook-secret
+          value_from_env: NHOST_WEBHOOK_SECRET
+      arguments:
+        - name: step_run_id
+          type: uuid!
+      output_type: WorkflowRunActionResult!
+    permissions:
+      - role: user
+  - name: triggerWorkflowWebhook
+    definition:
+      kind: synchronous
+      type: mutation
+      handler: "{{WORKFLOW_INBOUND_ACTION_WEBHOOK}}"
+      forward_client_headers: false
+      headers:
+        - name: nhost-webhook-secret
+          value_from_env: NHOST_WEBHOOK_SECRET
+      arguments:
+        - name: trigger_id
+          type: uuid!
+        - name: secret
+          type: String!
+        - name: payload
+          type: jsonb
+      output_type: WorkflowRunActionResult!
+    permissions:
+      - role: public
+custom_types:
+  enums: []
+  input_objects: []
+  scalars: []
+  objects:
+    - name: WorkflowRunActionResult
+      fields:
+        - name: workflow_run_id
+          type: uuid!
+        - name: status
+          type: String!
+        - name: message
+          type: String

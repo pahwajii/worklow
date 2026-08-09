@@ -1,0 +1,17 @@
+DROP VIEW IF EXISTS public.organization_usage_current_period;
+DROP FUNCTION IF EXISTS public.approve_step_and_enqueue(uuid, uuid);
+DROP FUNCTION IF EXISTS public.release_org_quota(uuid);
+DROP FUNCTION IF EXISTS public.finalize_org_quota(uuid);
+DROP FUNCTION IF EXISTS public.reserve_org_quota(uuid);
+DROP TABLE IF EXISTS public.watched_events;
+DROP TABLE IF EXISTS public.notification_outbox;
+DROP TABLE IF EXISTS public.workflow_data;
+DROP TABLE IF EXISTS public.run_jobs;
+DROP TABLE IF EXISTS public.step_runs;
+DROP TABLE IF EXISTS public.workflow_runs;
+DROP TABLE IF EXISTS public.workflow_triggers;
+DROP TABLE IF EXISTS public.workflow_steps;
+DROP TABLE IF EXISTS public.workflows;
+DROP TABLE IF EXISTS public.org_members;
+DROP TABLE IF EXISTS public.organizations;
+DROP FUNCTION IF EXISTS public.set_updated_at();

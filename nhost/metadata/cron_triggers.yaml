@@ -1,0 +1,13 @@
+- name: scheduled_workflow_dispatcher
+  webhook: "{{SCHEDULED_WORKFLOW_WEBHOOK}}"
+  schedule: "* * * * *"
+  include_in_metadata: true
+  payload: {source: hasura_cron}
+  headers:
+    - name: nhost-webhook-secret
+      value_from_env: NHOST_WEBHOOK_SECRET
+  retry_conf:
+    num_retries: 2
+    retry_interval_seconds: 20
+    timeout_seconds: 60
+    tolerance_seconds: 21600
