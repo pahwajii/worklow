@@ -132,6 +132,7 @@ function JsonEditor({ value, disabled, onChange }: { value: any; disabled?: bool
 export function WorkflowApp() {
   const [sessionReady, setSessionReady] = useState(false);
   const [session, setSession] = useState<any>(null);
+  const [authMode, setAuthMode] = useState<"signIn" | "signUp">("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -205,6 +206,10 @@ export function WorkflowApp() {
     void loadDashboard(orgId);
   }, [run?.status, runId, orgId]);
 
+  async function bootstrapUser() {
+    await nhost.functions.post("/bootstrap-user", {});
+  }
+
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true); setError("");
@@ -212,6 +217,24 @@ export function WorkflowApp() {
       const response = await nhost.auth.signInEmailPassword({ email, password });
       const nextSession = response.body?.session ?? nhost.getUserSession();
       if (!nextSession) throw new Error("Sign in failed");
+      await bootstrapUser();
+      setSession(nextSession);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); }
+  }
+
+  async function signUp(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true); setError("");
+    try {
+      const response = await nhost.auth.signUpEmailPassword({
+        email,
+        password,
+        options: { allowedRoles: ["user", "me"], defaultRole: "user" },
+      });
+      const nextSession = response.body?.session ?? nhost.getUserSession();
+      if (!nextSession) throw new Error("Account created. Verify the email if required, then sign in.");
+      await bootstrapUser();
       setSession(nextSession);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
@@ -339,14 +362,22 @@ export function WorkflowApp() {
   if (!session) {
     return (
       <main className="center">
-        <form className="panel auth" onSubmit={signIn}>
+        <form className="panel auth" onSubmit={authMode === "signIn" ? signIn : signUp}>
           <div className="eyebrow">NHOST + HASURA</div>
           <h1>AgentFlow</h1>
-          <p className="muted">Sign in with one of the seeded demo users.</p>
+          <p className="muted">{authMode === "signIn" ? "Sign in with a demo or created account." : "Create an account and personal org."}</p>
           <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
           <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
           {error && <div className="error">{error}</div>}
-          <button disabled={busy}>{busy ? "Signing in…" : "Sign in"}</button>
+          <button disabled={busy}>{busy ? (authMode === "signIn" ? "Signing in..." : "Creating account...") : (authMode === "signIn" ? "Sign in" : "Create account")}</button>
+          <button
+            className="ghost"
+            type="button"
+            disabled={busy}
+            onClick={() => { setAuthMode(authMode === "signIn" ? "signUp" : "signIn"); setError(""); }}
+          >
+            {authMode === "signIn" ? "Create an account" : "Use existing account"}
+          </button>
         </form>
       </main>
     );
