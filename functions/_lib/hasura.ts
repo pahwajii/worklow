@@ -1,11 +1,13 @@
 import { env } from "./env";
 
-const graphqlUrl = env.NHOST_GRAPHQL_URL;
+const deployedGraphqlUrl = "https://xtohbhbdmlegmskonuxm.hasura.ap-south-1.nhost.run/v1/graphql";
+const graphqlUrl = env.NHOST_GRAPHQL_URL || deployedGraphqlUrl;
 const adminSecret = env.NHOST_ADMIN_SECRET;
 
 function graphqlEndpoint() {
   if (!graphqlUrl) return null;
-  return graphqlUrl.endsWith("/graphql") ? graphqlUrl : `${graphqlUrl.replace(/\/$/, "")}/graphql`;
+  const endpoint = graphqlUrl.replace(".graphql.", ".hasura.").replace(/\/$/, "");
+  return endpoint.endsWith("/graphql") ? endpoint : `${endpoint}/graphql`;
 }
 
 export class HasuraError extends Error {

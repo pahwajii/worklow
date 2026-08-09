@@ -30,7 +30,8 @@ async function currentUser(req: Request) {
 
   const response = await fetch(endpoint, { headers: { authorization } });
   if (!response.ok) return null;
-  return (await response.json()) as { id: string; email?: string | null; displayName?: string | null };
+  const body = await response.json();
+  return (body.user ?? body) as { id: string; email?: string | null; displayName?: string | null };
 }
 
 function orgNameFor(user: { email?: string | null; displayName?: string | null }) {
