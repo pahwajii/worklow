@@ -5,6 +5,9 @@ version = 22
 [postgres.resources.storage]
 capacity = 1
 
+[observability.grafana]
+adminPassword = "{{ secrets.GRAFANA_ADMIN_PASSWORD }}"
+
 [hasura]
 adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
 
