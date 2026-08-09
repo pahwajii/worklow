@@ -8,6 +8,34 @@ capacity = 1
 [observability.grafana]
 adminPassword = "{{ secrets.GRAFANA_ADMIN_PASSWORD }}"
 
+[[global.environment]]
+name = "WORKFLOW_TRIGGER_ACTION_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/trigger-workflow-run"
+
+[[global.environment]]
+name = "WORKFLOW_APPROVAL_ACTION_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/approve-step"
+
+[[global.environment]]
+name = "WORKFLOW_INBOUND_ACTION_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/workflow-webhook-action"
+
+[[global.environment]]
+name = "WORKFLOW_EXECUTOR_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/execute-workflow-run"
+
+[[global.environment]]
+name = "NOTIFICATION_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/send-notification"
+
+[[global.environment]]
+name = "DATABASE_EVENT_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/database-event-trigger"
+
+[[global.environment]]
+name = "SCHEDULED_WORKFLOW_WEBHOOK"
+value = "https://xtohbhbdmlegmskonuxm.functions.ap-south-1.nhost.run/v1/scheduled-workflows"
+
 [hasura]
 adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
 
