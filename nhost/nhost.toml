@@ -2,6 +2,9 @@
 [functions.node]
 version = 22
 
+[postgres.resources.storage]
+capacity = 1
+
 [hasura]
 adminSecret = "{{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}"
 
