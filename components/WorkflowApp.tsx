@@ -163,8 +163,20 @@ export function WorkflowApp() {
 
   useEffect(() => {
     if (!session) return;
-    void loadDashboard();
-  }, [session]);
+    let cancelled = false;
+    (async () => {
+      try {
+        await bootstrapUser(session.accessToken);
+      } catch (e) {
+        if (!cancelled) setError(`Signed in, but org setup failed: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      const data = await loadDashboard();
+      if (!cancelled && !data.length) {
+        setError("No organization membership found. Create an account again or ask an owner to add this user.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [session?.accessToken]);
 
   useEffect(() => {
     if (!org) return;
@@ -206,8 +218,9 @@ export function WorkflowApp() {
     void loadDashboard(orgId);
   }, [run?.status, runId, orgId]);
 
-  async function bootstrapUser() {
-    await nhost.functions.post("/bootstrap-user", {});
+  async function bootstrapUser(accessToken?: string) {
+    const options = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined;
+    await nhost.functions.post("/bootstrap-user", {}, options);
   }
 
   async function signIn(e: React.FormEvent) {
@@ -217,8 +230,8 @@ export function WorkflowApp() {
       const response = await nhost.auth.signInEmailPassword({ email, password });
       const nextSession = response.body?.session ?? nhost.getUserSession();
       if (!nextSession) throw new Error("Sign in failed");
-      await bootstrapUser();
       setSession(nextSession);
+      await bootstrapUser(nextSession.accessToken).catch(() => undefined);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   }
@@ -234,8 +247,8 @@ export function WorkflowApp() {
       });
       const nextSession = response.body?.session ?? nhost.getUserSession();
       if (!nextSession) throw new Error("Account created. Verify the email if required, then sign in.");
-      await bootstrapUser();
       setSession(nextSession);
+      await bootstrapUser(nextSession.accessToken).catch(() => undefined);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   }
@@ -247,11 +260,18 @@ export function WorkflowApp() {
       setOrgs(data.organizations);
       const nextOrgId = preferredOrgId || orgId || data.organizations[0]?.id || "";
       setOrgId(nextOrgId);
-    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+      return data.organizations;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      return [];
+    }
   }
 
   async function createWorkflow() {
-    if (!org || !role || role === "viewer") return;
+    if (!org || !role || role === "viewer") {
+      setError(!org ? "No organization is available for this account." : "Your role cannot create workflows.");
+      return;
+    }
     setBusy(true); setError("");
     try {
       const created = await gql<{ insert_workflows_one: { id: string } }>(CREATE_WORKFLOW, {
@@ -406,7 +426,7 @@ export function WorkflowApp() {
 
       <div className="workspace">
         <aside className="panel sidebar">
-          <div className="row between"><h2>Workflows</h2>{role !== "viewer" && <button className="small" onClick={createWorkflow}>+ New</button>}</div>
+          <div className="row between"><h2>Workflows</h2>{(role === "owner" || role === "editor") && <button className="small" onClick={createWorkflow}>+ New</button>}</div>
           {org?.workflows.map((workflow) => (
             <button key={workflow.id} className={`workflow-link ${workflow.id === workflowId ? "active" : ""}`} onClick={() => { setWorkflowId(workflow.id); setDraft(cloneWorkflow(workflow)); setRunId(""); setRun(null); }}>
               <span>{workflow.name}</span><small>{workflow.runs[0]?.status ?? "never run"}</small>

@@ -8,6 +8,8 @@ export type Request = {
 };
 
 export type Response = {
+  setHeader?(name: string, value: string): Response;
+  header?(name: string, value: string): Response;
   status(code: number): Response;
   json(body: unknown): unknown;
 };

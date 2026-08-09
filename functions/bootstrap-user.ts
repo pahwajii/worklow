@@ -2,9 +2,20 @@ import type { Request, Response } from "./_lib/http";
 import { env } from "./_lib/env";
 import { adminGql } from "./_lib/hasura";
 
+const deployedAuthUrl = "https://xtohbhbdmlegmskonuxm.auth.ap-south-1.nhost.run/v1";
+
 function authEndpoint() {
-  const authUrl = env.NHOST_AUTH_URL;
+  const authUrl = env.NHOST_AUTH_URL || deployedAuthUrl;
   return authUrl ? `${authUrl.replace(/\/$/, "")}/user` : null;
+}
+
+function setCors(res: Response) {
+  res.setHeader?.("Access-Control-Allow-Origin", "*");
+  res.setHeader?.("Access-Control-Allow-Headers", "authorization,content-type");
+  res.setHeader?.("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.header?.("Access-Control-Allow-Origin", "*");
+  res.header?.("Access-Control-Allow-Headers", "authorization,content-type");
+  res.header?.("Access-Control-Allow-Methods", "POST,OPTIONS");
 }
 
 function authHeader(req: Request) {
@@ -29,6 +40,8 @@ function orgNameFor(user: { email?: string | null; displayName?: string | null }
 }
 
 export default async function handler(req: Request, res: Response) {
+  setCors(res);
+  if (req.method === "OPTIONS") return res.status(204).json({});
   if (req.method !== "POST") return res.status(405).json({ message: "POST required" });
 
   try {
