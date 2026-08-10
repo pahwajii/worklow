@@ -2,8 +2,9 @@
 
 import { createClient as createWsClient, type Client as WsClient } from "graphql-ws";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { APPROVE_STEP, CREATE_WORKFLOW, DASHBOARD_QUERY, RUN_PROGRESS_SUBSCRIPTION, SAVE_WORKFLOW, TRIGGER_WORKFLOW } from "@/lib/graphql";
+import { APPROVE_STEP, CREATE_WORKFLOW, DASHBOARD_QUERY, RUN_PROGRESS_SUBSCRIPTION, SAVE_WORKFLOW, TRIGGER_WORKFLOW, DELETE_WORKFLOW } from "@/lib/graphql";
 import { graphqlWsUrl, nhost } from "@/lib/nhost";
+
 
 type Role = "owner" | "editor" | "viewer";
 type StepType = "llm_call" | "http_request" | "db_write" | "notify" | "conditional_branch" | "approval_gate";
@@ -76,6 +77,111 @@ function defaultTriggers(role: Role): Trigger[] {
     ? [{ type: "manual", config: {}, enabled: true }, { type: "webhook", config: { secret: "demo-webhook-secret" }, enabled: true }]
     : [{ type: "manual", config: {}, enabled: true }];
 }
+
+function getDiagramRows(steps: Step[]) {
+  const rows: any[] = [];
+  let currentBranches: { [key: string]: { step: Step; index: number }[] } | null = null;
+
+  steps.forEach((step, index) => {
+    const branch = step.config?.branch;
+    if (branch) {
+      if (!currentBranches) {
+        currentBranches = {};
+      }
+      if (!currentBranches[branch]) {
+        currentBranches[branch] = [];
+      }
+      currentBranches[branch].push({ step, index });
+    } else {
+      if (currentBranches) {
+        rows.push({ type: "branches", branches: currentBranches });
+        currentBranches = null;
+      }
+      rows.push({ type: "main", step, index });
+    }
+  });
+
+  if (currentBranches) {
+    rows.push({ type: "branches", branches: currentBranches });
+  }
+
+  return rows;
+}
+
+function WorkflowDiagram({ steps, run }: { steps: Step[]; run: RunProgress | null }) {
+  const rows = getDiagramRows(steps);
+
+  const getStepStatus = (stepIdOrIndex: string | number, position: number) => {
+    if (!run) return "";
+    const stepRun = run.step_runs.find((sr) => 
+      sr.workflow_step.id === stepIdOrIndex || sr.workflow_step.position === position
+    );
+    return stepRun?.status ?? "";
+  };
+
+  return (
+    <div className="diagram-container">
+      {rows.length === 0 ? (
+        <div className="diagram-empty">No steps in this workflow yet. Add steps below to build your flow.</div>
+      ) : (
+        <div className="diagram-flow">
+          {rows.map((row, rIdx) => {
+            const isLastRow = rIdx === rows.length - 1;
+            if (row.type === "main") {
+              const status = getStepStatus(row.step.id ?? "", row.step.position);
+              return (
+                <div key={`main-${row.step.id ?? "new"}-${rIdx}`} className="diagram-row-wrapper">
+                  <div className={`diagram-node ${row.step.type} ${status}`}>
+                    <div className="node-badge">{row.index + 1}</div>
+                    <div className="node-content">
+                      <span className="node-name">{row.step.name || "Untitled Step"}</span>
+                      <span className="node-type">{row.step.type}</span>
+                    </div>
+                  </div>
+                  {!isLastRow && <div className="diagram-connector">↓</div>}
+                </div>
+              );
+            } else if (row.type === "branches") {
+              const branchKeys = Object.keys(row.branches);
+              return (
+                <div key={`branches-${rIdx}`} className="diagram-row-wrapper">
+                  <div className="diagram-branches">
+                    {branchKeys.map((bName) => (
+                      <div key={bName} className="diagram-branch-column">
+                        <div className="branch-label">Branch: {bName}</div>
+                        <div className="branch-nodes">
+                          {row.branches[bName].map((bNode: any, nIdx: number) => {
+                            const status = getStepStatus(bNode.step.id ?? "", bNode.step.position);
+                            const isLastInBranch = nIdx === row.branches[bName].length - 1;
+                            return (
+                              <div key={`bNode-${bNode.step.id ?? "new"}-${nIdx}`} className="diagram-node-wrapper">
+                                <div className={`diagram-node ${bNode.step.type} ${status}`}>
+                                  <div className="node-badge">{bNode.index + 1}</div>
+                                  <div className="node-content">
+                                    <span className="node-name">{bNode.step.name || "Untitled Step"}</span>
+                                    <span className="node-type">{bNode.step.type}</span>
+                                  </div>
+                                </div>
+                                {!isLastInBranch && <div className="diagram-connector">↓</div>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {!isLastRow && <div className="diagram-connector">↓</div>}
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 async function gql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
   const response = await nhost.graphql.request({ query, variables });
@@ -298,14 +404,14 @@ export function WorkflowApp() {
     setBusy(true); setError("");
     try {
       const created = await gql<{ insert_workflows_one: { id: string } }>(CREATE_WORKFLOW, {
-        object: { org_id: org.id, name: "AI Escalation Demo", description: "LLM → branch → HTTP → approval", enabled: true },
+        object: { org_id: org.id, name: "New Workflow", description: "My new workflow", enabled: true },
       });
       const id = created.insert_workflows_one.id;
-      const steps = defaultSteps().map((step) => ({ ...step, workflow_id: id }));
-      const triggers = await serializeTriggers(defaultTriggers(role), id);
+      const steps: Step[] = [];
+      const triggers = await serializeTriggers([{ type: "manual", config: {}, enabled: true }], id);
       await gql(SAVE_WORKFLOW, {
         workflowId: id,
-        patch: { name: "AI Escalation Demo", description: "LLM → branch → HTTP → approval", enabled: true },
+        patch: { name: "New Workflow", description: "My new workflow", enabled: true },
         keepStepIds: [],
         keepTriggerIds: [],
         steps,
@@ -313,6 +419,27 @@ export function WorkflowApp() {
       });
       await loadDashboard(org.id);
       setWorkflowId(id);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); }
+  }
+
+  async function deleteWorkflow() {
+    if (!draft || !role || role === "viewer") return;
+    if (!confirm(`Are you sure you want to delete the workflow "${draft.name}"?`)) return;
+    setBusy(true); setError("");
+    try {
+      await gql(DELETE_WORKFLOW, { id: draft.id });
+      const nextOrgs = await loadDashboard(orgId);
+      const remainingWorkflows = nextOrgs.find((o) => o.id === orgId)?.workflows ?? [];
+      if (remainingWorkflows.length > 0) {
+        setWorkflowId(remainingWorkflows[0].id);
+        setDraft(cloneWorkflow(remainingWorkflows[0]));
+      } else {
+        setWorkflowId("");
+        setDraft(null);
+      }
+      setRunId("");
+      setRun(null);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   }
@@ -466,6 +593,7 @@ export function WorkflowApp() {
                 <p className="muted">Ordered steps. Branch-tagged steps are skipped when their branch is inactive.</p>
               </div>
               <div className="row">
+                {role !== "viewer" && <button className="secondary danger-btn" disabled={busy} onClick={deleteWorkflow}>Delete</button>}
                 {role !== "viewer" && <button className="secondary" disabled={busy} onClick={saveWorkflow}>Save</button>}
                 {role !== "viewer" && <button disabled={busy} onClick={triggerRun}>▶ Run</button>}
               </div>
@@ -474,6 +602,9 @@ export function WorkflowApp() {
             <div className="run-input">
               <label>Manual run input JSON<textarea value={runInput} disabled={role === "viewer"} onChange={(e) => setRunInput(e.target.value)} /></label>
             </div>
+
+            <h3>Workflow Diagram</h3>
+            <WorkflowDiagram steps={draft.steps} run={run} />
 
             <h3>Steps</h3>
             <div className="steps">

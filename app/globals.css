@@ -3,3 +3,156 @@
 @media(max-width:1100px){.workspace{grid-template-columns:180px 1fr}.run-panel{grid-column:1/-1}.run-panel .timeline{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}@media(max-width:760px){.shell{padding:12px}header{align-items:flex-start;flex-direction:column}.header-actions{width:100%;flex-wrap:wrap}.quota{grid-template-columns:1fr auto}.quota .meter{grid-column:1/-1;grid-row:2}.workspace{grid-template-columns:1fr}.sidebar,.run-panel{grid-column:auto}.trigger{grid-template-columns:1fr}.title-input{min-width:0;width:100%}}
 
 .config.invalid { outline: 2px solid currentColor; outline-offset: -2px; }
+
+/* Workflow Diagram styling */
+.diagram-container {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 16px 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: auto;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+.diagram-empty {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 20px;
+}
+.diagram-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-width: fit-content;
+}
+.diagram-row-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.diagram-node {
+  background: rgba(23, 28, 36, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  max-width: 280px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+.diagram-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  border-color: var(--accent);
+}
+.diagram-node.llm_call { border-left: 4px solid #a855f7; }
+.diagram-node.http_request { border-left: 4px solid #06b6d4; }
+.diagram-node.conditional_branch { border-left: 4px solid #f97316; }
+.diagram-node.approval_gate { border-left: 4px solid #eab308; }
+.diagram-node.db_write { border-left: 4px solid #10b981; }
+.diagram-node.notify { border-left: 4px solid #3b82f6; }
+
+/* Run Status styles for Diagram Nodes */
+.diagram-node.pending { border: 1.5px solid var(--border); }
+.diagram-node.running { border: 1.5px solid #8cc8ff; box-shadow: 0 0 12px rgba(140, 200, 255, 0.3); }
+.diagram-node.succeeded { border: 1.5px solid var(--accent); box-shadow: 0 0 12px rgba(124, 246, 179, 0.3); }
+.diagram-node.failed { border: 1.5px solid var(--danger); box-shadow: 0 0 12px rgba(255, 123, 133, 0.3); }
+.diagram-node.skipped { opacity: 0.5; border: 1px dashed var(--border); }
+.diagram-node.awaiting_approval { border: 1.5px solid var(--warn); box-shadow: 0 0 12px rgba(246, 208, 111, 0.3); }
+
+.node-badge {
+  background: #1e293b;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.node-content {
+  display: flex;
+  flex-direction: column;
+}
+.node-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+}
+.node-type {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+.diagram-connector {
+  color: var(--muted);
+  font-size: 20px;
+  margin: 8px 0;
+  font-weight: bold;
+  animation: flowPulse 2s infinite ease-in-out;
+}
+@keyframes flowPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); color: var(--accent); }
+}
+.diagram-branches {
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+  padding: 16px;
+  background: rgba(12, 16, 21, 0.5);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+}
+.diagram-branch-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.branch-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(124, 246, 179, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 246, 179, 0.2);
+  margin-bottom: 8px;
+}
+.branch-nodes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.diagram-node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.danger-btn {
+  background: #3a171b !important;
+  color: var(--danger) !important;
+  border: 1px solid #6e2931 !important;
+}
+.danger-btn:hover {
+  background: #542026 !important;
+}
+

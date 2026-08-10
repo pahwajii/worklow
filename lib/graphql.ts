@@ -62,3 +62,11 @@ subscription RunProgress($runId: uuid!) {
     }
   }
 }`;
+
+export const DELETE_WORKFLOW = `
+mutation DeleteWorkflow($id: uuid!) {
+  delete_workflows_by_pk(id: $id) {
+    id
+  }
+}`;
+
